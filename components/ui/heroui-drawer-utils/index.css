@@ -1,0 +1,6 @@
+/* Utility styles for HeroUI Drawer integration */
+@layer components {
+  [data-slot="dialog"] {
+    animation-duration: 200ms;
+  }
+}

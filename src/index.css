@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-snow-white: #fafcff;
+    --color-snow-surface: #ffffff;
+    --color-royal-blue: #1d4ed8;
+    --color-royal-deep: #0e2a5c;
+    --color-royal-dark: #091a36;
+  }
+
+  body {
+    background-color: #fafcff;
+    color: #0e2a5c;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+}
+
+/* Deep royal blue & snow white helpers */
+.bg-snow {
+  background-color: #fafcff;
+}
+
+.bg-snow-surface {
+  background-color: #ffffff;
+}
+
+.text-royal-deep {
+  color: #0e2a5c;
+}
+
+.text-royal-blue {
+  color: #1d4ed8;
+}
+
+.border-royal-subtle {
+  border-color: #dbeafe;
+}
+
+/* Custom delicate scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(29, 78, 216, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(14, 42, 92, 0.45);
+}
+
+/* ==========================================================================
+   Parallax Scrolling Component Styles (Lenis + GSAP ScrollTrigger)
+   ========================================================================== */
+.parallax {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background-color: #030712;
+}
+
+.parallax__header {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.parallax__visuals {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.parallax__black-line-overflow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 35%, rgba(3, 7, 18, 0.5) 100%);
+  z-index: 5;
+}
+
+.parallax__layers {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 125%;
+  top: -12%;
+  will-change: transform;
+}
+
+.parallax__layer-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.parallax__layer-title {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.parallax__title {
+  font-size: clamp(3.5rem, 12vw, 9.5rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.8), 0 0 80px rgba(59, 130, 246, 0.35);
+  user-select: none;
+}
+
+.parallax__fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 260px;
+  background: linear-gradient(to bottom, transparent, #030712 95%);
+  pointer-events: none;
+  z-index: 6;
+}
+
+.parallax__content {
+  position: relative;
+  z-index: 10;
+  min-height: 45vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 1.5rem;
+  background-color: #030712;
+  color: #ffffff;
+  text-align: center;
+}
+
+.osmo-icon-svg {
+  width: 64px;
+  height: 64px;
+  color: #60a5fa;
+  filter: drop-shadow(0 0 16px rgba(96, 165, 250, 0.5));
+}
+
+.osmo-credits {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+  background-color: #030712;
+}
+
+.osmo-credits__p-a {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.2s ease;
+}
+
+.osmo-credits__p-a:hover {
+  color: #93c5fd;
+}
+

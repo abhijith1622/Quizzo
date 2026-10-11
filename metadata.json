@@ -1,0 +1,6 @@
+{
+  "name": "PulseQuiz - Interactive Live Quiz Platform",
+  "description": "Premium real-time interactive quiz platform with multiplayer gameplay, live leaderboards, AI question generator, team competitions, and rich analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
