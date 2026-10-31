@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
+import fs from 'fs';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { Server as SocketIOServer } from 'socket.io';
@@ -70,10 +71,22 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.resolve(__dirname, 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.resolve(distPath, 'index.html'));
-    });
+    const indexHtml = path.resolve(distPath, 'index.html');
+    if (fs.existsSync(indexHtml)) {
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        res.sendFile(indexHtml);
+      });
+    } else {
+      app.get('/', (req, res) => {
+        res.json({
+          status: 'ok',
+          service: 'Quizzo API & Real-time Server',
+          database: isMongoConnected() ? 'mongodb' : 'in-memory',
+          notice: 'Frontend is hosted on Cloudflare'
+        });
+      });
+    }
   }
 
   httpServer.listen(PORT, '0.0.0.0', () => {
