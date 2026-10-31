@@ -38,15 +38,20 @@ const io = new SocketIOServer(httpServer, {
 
 setupGameSockets(io);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({
+// Health check endpoints for Render and cloud load balancers
+const healthHandler = (req: express.Request, res: express.Response) => {
+  res.status(200).json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'Quizzo API & Real-time Server',
     database: isMongoConnected() ? 'mongodb' : 'in-memory'
   });
-});
+};
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
+app.head('/health', (req, res) => res.status(200).end());
+app.head('/api/health', (req, res) => res.status(200).end());
 
 // Mount API routes
 app.use('/api/v1/auth', authRoutes);
