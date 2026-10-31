@@ -9,6 +9,7 @@
     "start": "tsx server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
+    "deploy": "vite build && npx wrangler deploy",
     "deploy:pages": "vite build && npx wrangler pages deploy dist",
     "lint": "tsc --noEmit"
   },
