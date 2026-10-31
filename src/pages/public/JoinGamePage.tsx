@@ -5,15 +5,17 @@ import { QuizzoLogo } from '../../components/common/QuizzoLogo';
 import { AVATARS, getAvatar } from '../../utils/avatars';
 import { api } from '../../services/api';
 import { sounds } from '../../utils/effects';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const JoinGamePage: React.FC = () => {
+  const { user } = useAuth();
   const { code: paramCode } = useParams<{ code?: string }>();
   const [searchParams] = useSearchParams();
   const queryCode = searchParams.get('code');
   const navigate = useNavigate();
 
   const [gameCode, setGameCode] = useState(paramCode || queryCode || '');
-  const [nickname, setNickname] = useState('');
+  const [nickname, setNickname] = useState(user?.displayName || '');
   const [selectedAvatarKey, setSelectedAvatarKey] = useState('fox');
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [teams, setTeams] = useState<any[]>([]);
@@ -22,6 +24,13 @@ export const JoinGamePage: React.FC = () => {
   const [step, setStep] = useState<'enter_code' | 'enter_profile'>('enter_code');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync nickname if user logs in or profile changes
+  useEffect(() => {
+    if (user?.displayName && !nickname) {
+      setNickname(user.displayName);
+    }
+  }, [user]);
 
   // If code is in URL, auto-verify code on load
   useEffect(() => {
@@ -69,14 +78,20 @@ export const JoinGamePage: React.FC = () => {
     setError(null);
 
     try {
-      const res = await api.joinGame(gameCode.trim().toUpperCase(), nickname.trim());
+      const res = await api.joinGame(
+        gameCode.trim().toUpperCase(), 
+        nickname.trim(),
+        selectedAvatarKey,
+        isTeamMode ? selectedTeamId : undefined
+      );
       sounds.playCorrect();
 
       // Store player state in sessionStorage for session restoration
-      const participantId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const participantId = res.participantId || (user ? `usr_${user.id}` : `p_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`);
       const playerData = {
         participantId,
         sessionId: res.sessionId,
+        userId: user?.id,
         nickname: nickname.trim(),
         avatarKey: selectedAvatarKey,
         teamId: isTeamMode ? selectedTeamId : undefined
@@ -148,6 +163,14 @@ export const JoinGamePage: React.FC = () => {
           ) : (
             /* Step 2: Choose Avatar, Nickname & Team */
             <form onSubmit={handleJoinGame} className="space-y-6">
+              {user && (
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900">
+                  <span className="font-bold">Signed in:</span>
+                  <span className="font-semibold text-blue-700">{user.displayName}</span>
+                  <span className="text-slate-500 text-[11px] truncate">({user.email})</span>
+                </div>
+              )}
+
               {/* Nickname */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">

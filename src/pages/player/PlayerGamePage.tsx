@@ -76,22 +76,36 @@ export const PlayerGamePage: React.FC = () => {
   useEffect(() => {
     if (!sessionId || !playerData) return;
 
-    socket.emit('game:join', {
-      sessionId,
-      participantId: playerData.participantId,
-      nickname: playerData.nickname,
-      avatarKey: playerData.avatarKey,
-      teamId: playerData.teamId
-    }, (resp: any) => {
-      if (resp?.success && resp.session) {
-        setGameState((prev: any) => ({
-          ...prev,
-          status: resp.session.status,
-          quizTitle: resp.session.quizTitle,
-          currentSlide: resp.session.currentSlide,
-          participantsCount: resp.session.participantsCount
-        }));
-      }
+    const joinGameRoom = () => {
+      socket.emit('game:join', {
+        sessionId,
+        participantId: playerData.participantId,
+        nickname: playerData.nickname,
+        avatarKey: playerData.avatarKey,
+        teamId: playerData.teamId
+      }, (resp: any) => {
+        if (resp?.success && resp.session) {
+          setGameState((prev: any) => ({
+            ...prev,
+            status: resp.session.status,
+            quizTitle: resp.session.quizTitle,
+            currentSlide: resp.session.currentSlide,
+            participantsCount: resp.session.participantsCount
+          }));
+        }
+      });
+    };
+
+    joinGameRoom();
+    socket.on('connect', joinGameRoom);
+
+    // Lobby updates (participant count)
+    socket.on('lobby:update', (data: { participants: any[]; teams: any[]; isLobbyLocked: boolean; status: any }) => {
+      setGameState((prev: any) => ({
+        ...prev,
+        participantsCount: data.participants?.length || prev.participantsCount,
+        status: data.status || prev.status
+      }));
     });
 
     // Question started
@@ -148,6 +162,8 @@ export const PlayerGamePage: React.FC = () => {
     });
 
     return () => {
+      socket.off('connect', joinGameRoom);
+      socket.off('lobby:update');
       socket.off('question:started');
       socket.off('question:locked');
       socket.off('question:unlocked');

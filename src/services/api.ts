@@ -1,7 +1,32 @@
 import { Quiz, QuizTemplate, User, GameSession, GameResult } from '../types/quiz';
 
-const rawApiUrl = (import.meta as any).env?.VITE_API_URL || '';
-const API_BASE = rawApiUrl ? `${rawApiUrl.replace(/\/$/, '')}/api/v1` : '/api/v1';
+// Backend host on Render
+const DEFAULT_BACKEND_URL = 'https://quizzo-backend-6jvx.onrender.com';
+
+function getApiBase(): string {
+  const envUrl = 
+    (import.meta as any).env?.VITE_API_URL || 
+    (import.meta as any).env?.VITE_URL_API || 
+    (import.meta as any).env?.VITE_BACKEND_URL;
+
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
+    return `${envUrl.trim().replace(/\/api\/v1\/?$/, '').replace(/\/$/, '')}/api/v1`;
+  }
+
+  // If running in browser on Cloudflare Pages or external host (not localhost/127.0.0.1)
+  if (typeof window !== 'undefined' && window.location) {
+    const isLocalhost = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1' || 
+                        window.location.hostname.endsWith('.local');
+    if (!isLocalhost) {
+      return `${DEFAULT_BACKEND_URL}/api/v1`;
+    }
+  }
+
+  return '/api/v1';
+}
+
+const API_BASE = getApiBase();
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('quizzo_token') || localStorage.getItem('pulsequiz_token');
@@ -153,11 +178,11 @@ export const api = {
     return handleResponse(res);
   },
 
-  async joinGame(code: string, nickname: string): Promise<{ sessionId: string; quizTitle: string; mode: string; teams: any[] }> {
+  async joinGame(code: string, nickname: string, avatarKey?: string, teamId?: string): Promise<{ sessionId: string; participantId?: string; quizTitle: string; mode: string; teams: any[] }> {
     const res = await fetch(`${API_BASE}/games/join`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ code, nickname })
+      body: JSON.stringify({ code, nickname, avatarKey, teamId })
     });
     return handleResponse(res);
   },

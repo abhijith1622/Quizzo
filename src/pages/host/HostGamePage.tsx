@@ -50,6 +50,16 @@ export const HostGamePage: React.FC = () => {
   useEffect(() => {
     if (!sessionId) return;
 
+    const registerHost = (currentSession: GameSession) => {
+      socket.emit('host:join', { sessionId: currentSession.id, hostId: currentSession.hostId }, (resp: any) => {
+        if (!resp?.success) {
+          console.warn('Host socket registration warning:', resp?.error);
+        } else {
+          console.log('⚡ Host registered to room for session:', currentSession.id);
+        }
+      });
+    };
+
     api.getGameSession(sessionId).then(res => {
       setSession(res.session);
 
@@ -62,14 +72,19 @@ export const HostGamePage: React.FC = () => {
       });
 
       // Join socket as host
-      socket.emit('host:join', { sessionId: res.session.id, hostId: res.session.hostId }, (resp: any) => {
-        if (!resp?.success) {
-          console.warn('Host socket registration warning:', resp?.error);
-        }
-      });
+      registerHost(res.session);
     }).catch(err => {
       console.error('Error fetching session:', err);
     });
+
+    const onConnect = () => {
+      if (sessionId) {
+        api.getGameSession(sessionId).then(res => {
+          registerHost(res.session);
+        }).catch(() => {});
+      }
+    };
+    socket.on('connect', onConnect);
 
     // Listen to lobby updates
     socket.on('lobby:update', (data: { participants: Participant[]; teams: any[]; isLobbyLocked: boolean; status: any }) => {
@@ -81,6 +96,25 @@ export const HostGamePage: React.FC = () => {
         status: data.status
       } : null);
     });
+
+    // Fallback lobby sync polling: every 3s in waiting status to guarantee zero player loss
+    const lobbyPollInterval = setInterval(() => {
+      setSession(prev => {
+        if (prev && prev.status === 'waiting') {
+          api.getGameSession(sessionId).then(res => {
+            if (res.session && res.session.status === 'waiting') {
+              setSession(current => current ? {
+                ...current,
+                participants: res.session.participants,
+                teams: res.session.teams,
+                isLobbyLocked: res.session.isLobbyLocked
+              } : null);
+            }
+          }).catch(() => {});
+        }
+        return prev;
+      });
+    }, 3000);
 
     // Real-time answer counter
     socket.on('answer:count', (data: { answeredCount: number }) => {
@@ -157,6 +191,8 @@ export const HostGamePage: React.FC = () => {
     });
 
     return () => {
+      clearInterval(lobbyPollInterval);
+      socket.off('connect', onConnect);
       socket.off('lobby:update');
       socket.off('answer:count');
       socket.off('question:started');

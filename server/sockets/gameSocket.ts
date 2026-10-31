@@ -22,10 +22,13 @@ export function setupGameSockets(io: SocketIOServer) {
       currentSessionId = sessionId;
       socket.join(`game:${sessionId}`);
 
-      // Check if participant already exists (reconnection)
+      // Check if participant already exists (reconnection or pre-joined via HTTP)
       let participant: Participant | undefined;
       if (participantId) {
         participant = session.participants.find(p => p.id === participantId);
+      }
+      if (!participant && nickname) {
+        participant = session.participants.find(p => p.nickname.toLowerCase() === nickname.trim().toLowerCase());
       }
 
       if (!participant && nickname) {

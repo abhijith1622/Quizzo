@@ -98,8 +98,8 @@ router.get('/sessions/hosted', requireAuth, (req: AuthRequest, res: Response) =>
   return res.json({ sessions: formattedSessions });
 });
 
-// Lookup session by join code (Protected: requires authentication)
-router.get('/code/:code', requireAuth, (req: AuthRequest, res: Response) => {
+// Lookup session by join code (Public: players can join with PIN without logging into an account)
+router.get('/code/:code', optionalAuth, (req: AuthRequest, res: Response) => {
   const code = String(req.params.code).trim().toUpperCase();
   let foundSession: GameSession | undefined;
 
@@ -124,9 +124,9 @@ router.get('/code/:code', requireAuth, (req: AuthRequest, res: Response) => {
   });
 });
 
-// Join game verification (Protected: requires authentication)
-router.post('/join', requireAuth, (req: AuthRequest, res: Response) => {
-  const { code, nickname } = req.body;
+// Join game verification (Public: players can join with PIN and nickname)
+router.post('/join', optionalAuth, (req: AuthRequest, res: Response) => {
+  const { code, nickname, avatarKey, teamId } = req.body;
   if (!code || !nickname) {
     return res.status(400).json({ error: 'Code and nickname are required' });
   }
@@ -150,14 +150,57 @@ router.post('/join', requireAuth, (req: AuthRequest, res: Response) => {
     return res.status(403).json({ error: 'This game lobby is currently locked' });
   }
 
-  // Check if nickname already taken in active participants
-  const nickExists = targetSession.participants.some(p => p.nickname.toLowerCase() === cleanNick.toLowerCase() && p.connectionStatus === 'connected');
-  if (nickExists) {
-    return res.status(409).json({ error: 'Nickname already taken in this game. Choose another nickname.' });
+  // Check if participant already exists (re-joining with same account or nickname)
+  let participant = targetSession.participants.find(p => 
+    (req.user?.userId && p.userId === req.user.userId) ||
+    p.nickname.toLowerCase() === cleanNick.toLowerCase()
+  );
+
+  if (participant) {
+    participant.connectionStatus = 'connected';
+    participant.nickname = cleanNick;
+    if (avatarKey) participant.avatarKey = avatarKey;
+    if (teamId) participant.teamId = teamId;
+  } else {
+    participant = {
+      id: `p_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      sessionId: targetSession.id,
+      userId: req.user?.userId,
+      nickname: cleanNick,
+      avatarKey: avatarKey || 'fox',
+      teamId: teamId || undefined,
+      score: 0,
+      streak: 0,
+      correctCount: 0,
+      incorrectCount: 0,
+      lastResponseTimeMs: 0,
+      connectionStatus: 'connected',
+      joinedAt: new Date().toISOString()
+    };
+    targetSession.participants.push(participant);
+
+    if (teamId) {
+      const team = targetSession.teams.find(t => t.id === teamId);
+      if (team) {
+        team.memberCount += 1;
+      }
+    }
+  }
+
+  // Instantly broadcast participant update to host room
+  const io = req.app.get('io');
+  if (io) {
+    io.to(`game:${targetSession.id}`).emit('lobby:update', {
+      participants: targetSession.participants,
+      teams: targetSession.teams,
+      isLobbyLocked: targetSession.isLobbyLocked,
+      status: targetSession.status
+    });
   }
 
   return res.json({
     sessionId: targetSession.id,
+    participantId: participant.id,
     quizTitle: targetSession.quizTitle,
     mode: targetSession.mode,
     teams: targetSession.teams

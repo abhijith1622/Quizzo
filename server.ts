@@ -37,6 +37,7 @@ const io = new SocketIOServer(httpServer, {
 });
 
 setupGameSockets(io);
+app.set('io', io);
 
 // Health check endpoints for Render and cloud load balancers
 const healthHandler = (req: express.Request, res: express.Response) => {
