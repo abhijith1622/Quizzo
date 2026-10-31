@@ -1,6 +1,7 @@
 import { Quiz, QuizTemplate, User, GameSession, GameResult } from '../types/quiz';
 
-const API_BASE = '/api/v1';
+const rawApiUrl = (import.meta as any).env?.VITE_API_URL || '';
+const API_BASE = rawApiUrl ? `${rawApiUrl.replace(/\/$/, '')}/api/v1` : '/api/v1';
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('quizzo_token') || localStorage.getItem('pulsequiz_token');

@@ -4,8 +4,9 @@ let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
-    // In dev / production, connect to window.location.origin
-    const url = window.location.origin;
+    // In dev / production, connect to VITE_SOCKET_URL, VITE_API_URL, or window.location.origin
+    const envSocketUrl = (import.meta as any).env?.VITE_SOCKET_URL || (import.meta as any).env?.VITE_API_URL;
+    const url = envSocketUrl ? envSocketUrl.replace(/\/api\/v1\/?$/, '') : window.location.origin;
     socket = io(url, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
